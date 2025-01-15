@@ -13,6 +13,12 @@
         public DateTime DateCreated { get; set; }
     }
 
+    public class UserRegisterResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public int UserId { get; set; }
+    }
     public class UserLoginDto
     {
         public string Email { get; set; }

@@ -1,14 +1,16 @@
-﻿using FootballApp.Dtos;
+﻿using FluentValidation;
+using FootballApp.Dtos;
 using FootballApp.Entities;
+using FootballApp.Repositories;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Crypto.Generators;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BCrypt.Net;
-
 
 namespace FootballApp.Controllers
 {
@@ -16,47 +18,105 @@ namespace FootballApp.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private readonly IUserRepository _userRepository;
+        private readonly IValidator<UserRegisterDto> _validator;
+        private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly ILogger<AuthController> _logger;
         private readonly FootballDbContext _context;
         private readonly IConfiguration _configuration;
 
-        public AuthController(FootballDbContext context, IConfiguration configuration)
+        public AuthController(
+            IUserRepository userRepository,
+            IValidator<UserRegisterDto> validator,
+            IPasswordHasher<User> passwordHasher,
+            ILogger<AuthController> logger,
+            FootballDbContext context, 
+            IConfiguration configuration)
         {
+            _userRepository = userRepository;
+            _validator = validator;
+            _passwordHasher = passwordHasher;
+            _logger = logger;
             _context = context;
             _configuration = configuration;
         }
-
+        #region Register
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterDto userDto)
+        public async Task<ActionResult<UserRegisterDto>> Register(UserRegisterDto request)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == userDto.Email))
+            try
             {
-                return BadRequest("Email is already registered.");
+                var validationResult = await _validator.ValidateAsync(request);
+                if (!validationResult.IsValid)
+                {
+                    return BadRequest(new UserRegisterResponse
+                    {
+                        Success = false,
+                        Message = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage))
+                    });
+                }
+
+                if (await _userRepository.EmailExistsAsync(request.Email))
+                {
+                    return Conflict(new UserRegisterResponse
+                    {
+                        Success = false,
+                        Message = "Bu e-posta adresi zaten kullanımda. Giriş yapmayı deneyebilirsiniz."
+                    });
+                }
+
+
+                var user = new User
+                {
+                    Name = request.Name.Trim(),
+                    Surname = request.Surname.Trim(),
+                    Email = request.Email.ToLowerInvariant().Trim(),
+                    Age = request.Age,
+                    Contact = request.Contact?.Trim(),
+                    Position = request.PositionsPlayed?.Trim(),
+                    ProfilePictureUrl = request.ProfilePicture?.Trim(),
+                    DateCreated = DateTime.UtcNow
+                };
+
+                // Hash the password
+                user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+
+
+                await _userRepository.CreateUserAsync(user);
+
+                
+                return Ok(new UserRegisterResponse
+                {
+                    Success = true,
+                    Message = "Kayıt başarıyla tamamlandı.",
+                    UserId = user.Id
+                });
             }
-
-            var user = new User
+            catch (Exception ex)
             {
-                Name = userDto.Name,
-                Surname = userDto.Surname,
-                Email = userDto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-                Age = userDto.Age,
-                Contact = userDto.Contact,
-                Position = userDto.PositionsPlayed,
-                ProfilePictureUrl = userDto.ProfilePicture,
-                DateCreated = userDto.DateCreated
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok("User registered successfully.");
+                _logger.LogError(ex, "Kullanıcı kaydı sırasında hata oluştu: {Email}", request.Email);
+                return StatusCode(500, new UserRegisterResponse
+                {
+                    Success = false,
+                    Message = "Kayıt işlemi sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyiniz."
+                });
+            }
         }
+        #endregion
 
+        #region Login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto loginDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+            if (user == null)
+            {
+                return Unauthorized("Invalid email or password.");
+            }
+
+            // Use IPasswordHasher to verify the password
+            var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, loginDto.Password);
+            if (passwordVerificationResult != Microsoft.AspNetCore.Identity.PasswordVerificationResult.Success)
             {
                 return Unauthorized("Invalid email or password.");
             }
@@ -65,7 +125,12 @@ namespace FootballApp.Controllers
             return Ok(new { token });
         }
 
-        //bu alanı değiştireceğim. dbye şifreli atılıyor ama okurken şifresiz okuması gerekli.
+        #endregion
+
+        #region Functions
+
+        #endregion
+        //jwt token genereta merkezi bir hale getirilmeli
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
