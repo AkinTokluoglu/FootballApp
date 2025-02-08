@@ -11,7 +11,10 @@
         public string Contact { get; set; }
         public string Position { get; set; }
         public string ProfilePictureUrl { get; set; }
+        public string Role { get; set; } // "Captain" or "Player"
         public DateTime DateCreated { get; set; }
+
+        public List<UserTeam> UserTeams { get; set; }
     }
 
 }

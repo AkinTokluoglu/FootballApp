@@ -75,6 +75,7 @@ namespace FootballApp.Controllers
                     Contact = request.Contact?.Trim(),
                     Position = request.PositionsPlayed?.Trim(),
                     ProfilePictureUrl = request.ProfilePicture?.Trim(),
+                    Role = "Player",
                     DateCreated = DateTime.UtcNow
                 };
 

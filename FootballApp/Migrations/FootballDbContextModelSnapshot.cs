@@ -30,6 +30,15 @@ namespace FootballApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EnemyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EnemyScore")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
@@ -40,16 +49,10 @@ namespace FootballApp.Migrations
                     b.Property<DateTime>("MatchDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("TeamAId")
+                    b.Property<int>("TeamId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TeamAScore")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeamBId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeamBScore")
+                    b.Property<int>("TeamScore")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -68,18 +71,16 @@ namespace FootballApp.Migrations
                     b.Property<int>("CaptainId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("DateCreated")
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.PrimitiveCollection<string>("PlayerIds")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("CaptainId");
 
                     b.ToTable("Teams");
                 });
@@ -122,6 +123,10 @@ namespace FootballApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Surname")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -129,6 +134,91 @@ namespace FootballApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("FootballApp.Entities.UserTeam", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "TeamId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("UserTeam");
+                });
+
+            modelBuilder.Entity("TeamUser", b =>
+                {
+                    b.Property<int>("MembersId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MembersId", "TeamId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("TeamMembers", (string)null);
+                });
+
+            modelBuilder.Entity("FootballApp.Entities.Team", b =>
+                {
+                    b.HasOne("FootballApp.Entities.User", "Captain")
+                        .WithMany()
+                        .HasForeignKey("CaptainId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Captain");
+                });
+
+            modelBuilder.Entity("FootballApp.Entities.UserTeam", b =>
+                {
+                    b.HasOne("FootballApp.Entities.Team", "Team")
+                        .WithMany("UserTeams")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FootballApp.Entities.User", "User")
+                        .WithMany("UserTeams")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeamUser", b =>
+                {
+                    b.HasOne("FootballApp.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MembersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FootballApp.Entities.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballApp.Entities.Team", b =>
+                {
+                    b.Navigation("UserTeams");
+                });
+
+            modelBuilder.Entity("FootballApp.Entities.User", b =>
+                {
+                    b.Navigation("UserTeams");
                 });
 #pragma warning restore 612, 618
         }

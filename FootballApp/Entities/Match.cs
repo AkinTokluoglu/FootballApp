@@ -3,12 +3,13 @@
     public class Match
     {
         public int Id { get; set; }
-        public int TeamAId { get; set; }
-        public int TeamBId { get; set; }
+        public int TeamId { get; set; }
+        public int EnemyId { get; set; }
         public DateTime MatchDate { get; set; }
+        public DateTime CreatedDate { get; set; }
         public string Location { get; set; }
-        public int TeamAScore { get; set; }
-        public int TeamBScore { get; set; }
+        public int TeamScore { get; set; }
+        public int EnemyScore { get; set; }
         public bool IsCompleted { get; set; }
     }
 }

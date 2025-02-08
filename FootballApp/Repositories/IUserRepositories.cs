@@ -7,5 +7,6 @@ namespace FootballApp.Repositories
     {
         Task<bool> EmailExistsAsync(string email);
         Task CreateUserAsync(User user);
+        Task UpdateUserAsync(User user);
     }
 }
