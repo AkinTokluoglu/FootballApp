@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballApp.Migrations
 {
     [DbContext(typeof(FootballDbContext))]
-    [Migration("20250208215810_AddUserTeamJoinTable")]
-    partial class AddUserTeamJoinTable
+    [Migration("20250313191154_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -151,7 +151,7 @@ namespace FootballApp.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("UserTeam");
+                    b.ToTable("UserTeams");
                 });
 
             modelBuilder.Entity("TeamUser", b =>

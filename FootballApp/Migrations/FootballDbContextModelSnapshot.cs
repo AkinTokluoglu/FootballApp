@@ -148,7 +148,7 @@ namespace FootballApp.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("UserTeam");
+                    b.ToTable("UserTeams");
                 });
 
             modelBuilder.Entity("TeamUser", b =>

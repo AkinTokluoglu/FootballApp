@@ -73,8 +73,8 @@ namespace FootballApp.Controllers
                     Email = request.Email.ToLowerInvariant().Trim(),
                     Age = request.Age,
                     Contact = request.Contact?.Trim(),
-                    Position = request.PositionsPlayed?.Trim(),
-                    ProfilePictureUrl = request.ProfilePicture?.Trim(),
+                    Position = "",
+                    ProfilePictureUrl = "",
                     Role = "Player",
                     DateCreated = DateTime.UtcNow
                 };
